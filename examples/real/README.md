@@ -16,10 +16,10 @@ prompt. Each record carries its provenance: `model`, `modelVersion`
 | `gemini-3.5-flash-20261110-repeat-stali.jsonl` | gemini-3.5-flash | gemini-3.5-flash | stali | 2026-11-10 12:43 UTC |
 
 Each file has a `.meta.json` sidecar with token counts and the exact
-recording parameters (including `thinkingBudget`: 0 for the
-google-ai-studio runs - thinking disabled so the token budget goes to
-the answer; omitted for the Stali run, where the gateway rejects
-`thinkingBudget: 0`).
+recording parameters (including `thinkingBudget`: 0 for the baseline
+run, -1 for the lite run - the lite model rejects `thinkingBudget: 0`
+with a 400, so thinking was left unset there; the Stali run records
+no such field).
 
 Token counts are as reported by each gateway: 253 prompt / 5,403
 candidate tokens (baseline), 253 / 4,801 (lite), 24,265 / 4,822
