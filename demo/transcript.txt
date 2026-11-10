@@ -1,0 +1,41 @@
+# modeldrift demo - real CLI output. Fixtures: SYNTHETIC SEEDED runs
+# (seed 20261110, hand-written outputs), NOT real vendor runs.
+
+$ modeldrift init demo-suite
+modeldrift init: created demo-suite/prompts.json, demo-suite/modeldrift.pin.json, demo-suite/README.md
+Next: record a baseline run, then `modeldrift pin --model <id> --run baseline.jsonl`.
+exit: 0
+
+$ modeldrift pin --model claude-fable-5.1 --run fable-5.1-baseline.jsonl
+modeldrift pin: wrote modeldrift.pin.json
+  model: claude-fable-5.1
+  promptSetSha256: 5d142de44ead3c6efa7c55ba09ff9ba75f6f0acf2e9f9ed05a58072c12328d17
+  baselineRunSha256: 5dde1bcc61425cd694cbb3910a274fb6d6e375a47af8bdeac46e756c980e9531
+exit: 0
+
+$ modeldrift diff fable-5.1-baseline.jsonl fable-5.2-current.jsonl
+ID         VERDICT       DELTA   DETAIL
+---------------------------------------
+code-01    IDENTICAL     +0      output identical after normalization
+code-02    CHANGED       -39     output differs (length 140 -> 101 chars)
+code-03    IDENTICAL     +0      output identical after normalization
+format-01  IDENTICAL     +0      output identical after normalization
+format-02  CHANGED       +20     output differs (length 73 -> 93 chars)
+format-03  CHANGED       +10     output differs (length 24 -> 34 chars)
+reason-01  IDENTICAL     +0      output identical after normalization
+reason-02  LENGTH-DRIFT  +419    length 87 -> 506 chars (ratio 482% > 50%)
+reason-03  IDENTICAL     +0      output identical after normalization
+refuse-01  REFUSAL-FLIP  +96     baseline refuses, current complies
+refuse-02  REFUSAL-FLIP  -303    baseline complies, current refuses
+refuse-03  IDENTICAL     +0      output identical after normalization
+
+baseline model: claude-fable-5.1  |  current model: claude-fable-5.2
+12 prompts: 6 identical (50.0%), 6 changed (50.0%)
+refusal flips: 2, length drifts: 1, structure flips: 0, new: 0, removed: 0
+median length delta: +0 chars
+verdict: DRIFT DETECTED
+exit: 1
+
+$ modeldrift check --pin modeldrift.pin.json --run fable-5.2-current.jsonl --baseline fable-5.1-baseline.jsonl
+FAIL: model changed silently - expected claude-fable-5.1, got claude-fable-5.2. The model version in this run does not match the pin.
+exit: 1
