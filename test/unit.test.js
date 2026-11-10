@@ -60,6 +60,20 @@ test("refusal: detects both directions of a flip", () => {
   assert.equal(r2.prompts[0].verdict, "REFUSAL-FLIP");
 });
 
+test("refusal: known false positives stay non-refusal", () => {
+  // The idiom "I can't believe ..." is enthusiasm, not a refusal.
+  assert.equal(isRefusal("I can't believe how good this is"), false);
+  assert.equal(isRefusal("I cannot believe this worked on the first try."), false);
+  // A refusal phrase quoted mid-sentence is not a refusal opening.
+  assert.equal(isRefusal('He said "I can\'t do it" and walked away.'), false);
+  assert.equal(isRefusal("The user wrote that I can't be trusted with this."), false);
+});
+
+test("refusal: a refusal that opens a later sentence still counts", () => {
+  assert.equal(isRefusal("Here is my draft. I can't finish this request."), true);
+  assert.equal(isRefusal("Sure, here is the story.\nI am unable to continue."), true);
+});
+
 test("refusal: phrase list is public and non-empty", () => {
   assert.ok(REFUSAL_PHRASES.length >= 10);
   assert.ok(REFUSAL_PHRASES.includes("i can't"));
@@ -82,8 +96,8 @@ test("length: ratio math and LENGTH-DRIFT threshold", () => {
 test("structure: JSON validity flip on a JSON prompt", () => {
   assert.equal(parsesAsJson('{"a": 1}'), true);
   assert.equal(parsesAsJson("not json"), false);
-  assert.equal(wantsJson("Reply with JSON only.", "{}", "nope"), true);
-  assert.equal(wantsJson("Name three colors.", "red", "blue"), false);
+  assert.equal(wantsJson("Reply with JSON only."), true);
+  assert.equal(wantsJson("Name three colors."), false);
   const r = diffRuns(
     [rec("a", '{"primes": [2, 3]}', "Reply with JSON only.")],
     [rec("a", "The primes are 2 and 3.", "Reply with JSON only.")],
@@ -93,15 +107,27 @@ test("structure: JSON validity flip on a JSON prompt", () => {
 });
 
 test("structure: no flip when the prompt does not ask for JSON", () => {
+  // JSON validity flips, but the prompt never asked for JSON: the verdict
+  // is CHANGED, not STRUCTURE-FLIP.
   const r = diffRuns(
-    [rec("a", "hello", "Say hello.")],
-    [rec("a", '{"hello": true}', "Say hello.")],
+    [rec("a", "not json at al", "Say hello.")],
+    [rec("a", '{"a": 123456}', "Say hello.")],
   );
-  // Prompt does not ask for JSON, but one side looks JSON-shaped: wantsJson
-  // still fires because the current output starts with "{" - verdict is
-  // STRUCTURE-FLIP only when JSON validity flips AND the prompt/output
-  // context is JSON-shaped. Documented behavior: output shape counts.
-  assert.equal(r.prompts[0].verdict, "STRUCTURE-FLIP");
+  assert.equal(r.prompts[0].verdict, "CHANGED");
+  assert.equal(r.summary.structureFlips, 0);
+});
+
+test("structure: code output starting with '{' is not a JSON flip", () => {
+  // A code answer that starts with an object literal is not JSON output:
+  // the prompt asks for code, not JSON, so a JSON-validity change is
+  // just CHANGED.
+  const prompt = "Write a JavaScript function that returns an object literal.";
+  const r = diffRuns(
+    [rec("a", 'const o = {"a": 1};', prompt)],
+    [rec("a", '{"a": 1}      ', prompt)],
+  );
+  assert.equal(r.prompts[0].verdict, "CHANGED");
+  assert.equal(r.summary.structureFlips, 0);
 });
 
 test("verdict priority: refusal flip beats length drift", () => {

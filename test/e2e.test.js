@@ -54,6 +54,35 @@ test("e2e: diff --threshold keeps a small change STABLE", () => {
   assert.match(r.stdout, /verdict: STABLE/);
 });
 
+test("e2e: prompt-set guard allows exactly 25% mismatch, refuses above it", () => {
+  const dir = mkdtempSync(join(tmpdir(), "modeldrift-e2e-"));
+  const records = readFileSync(BASELINE, "utf8").trim().split("\n").map((l) => JSON.parse(l));
+  // Exactly 3 of 12 prompts removed: 3/12 = 25% mismatch, at the limit.
+  const atLimit = join(dir, "at-limit.jsonl");
+  writeFileSync(atLimit, records.slice(0, 9).map((r) => JSON.stringify(r)).join("\n") + "\n", "utf8");
+  const ok = run(["diff", BASELINE, atLimit]);
+  assert.notEqual(ok.status, 2, "25% mismatch must not be refused");
+  assert.match(ok.stdout, /removed: 3/);
+  // 4 of 12 removed: 4/12 = 33% > 25%, the guard refuses (exit 2).
+  const overLimit = join(dir, "over-limit.jsonl");
+  writeFileSync(overLimit, records.slice(0, 8).map((r) => JSON.stringify(r)).join("\n") + "\n", "utf8");
+  const refused = run(["diff", BASELINE, overLimit]);
+  assert.equal(refused.status, 2);
+  assert.match(refused.stderr, /prompt sets differ too much/);
+});
+
+test("e2e: diff warns on stderr when a run records temperature above 0", () => {
+  const dir = mkdtempSync(join(tmpdir(), "modeldrift-e2e-"));
+  const records = readFileSync(BASELINE, "utf8").trim().split("\n").map((l) => JSON.parse(l));
+  records[0].temperature = 0.7;
+  const warm = join(dir, "warm.jsonl");
+  writeFileSync(warm, records.map((r) => JSON.stringify(r)).join("\n") + "\n", "utf8");
+  const r = run(["diff", BASELINE, warm]);
+  assert.equal(r.status, 0, "same outputs stay STABLE even when warm");
+  assert.match(r.stderr, /warning: warm\.jsonl records a temperature other than 0/);
+  assert.match(r.stderr, /sampling noise/);
+});
+
 test("e2e: diff fails cleanly on a missing file (exit 2)", () => {
   const r = run(["diff", BASELINE, "no-such-file.jsonl"]);
   assert.equal(r.status, 2);

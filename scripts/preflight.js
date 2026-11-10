@@ -14,15 +14,20 @@ const ROOT = new URL("..", import.meta.url).pathname;
 
 // Internal codenames - matched as standalone words so "enables" etc. don't trip it.
 // "techdevfun" is the PUBLIC GitHub org and is intentionally allowed.
+// Each name is assembled from fragments at runtime, so this file itself
+// contains no literal internal name: the scanner must not trip on its own
+// list, and no internal name ships as a literal in the public repo.
 const FORBIDDEN_WORDS = [
-  "tranmyphuc", "luyenthi", "sghasia", "jackapp",
-  "NAB", // as a word; the internal "NAB-grade" reference
+  "tran" + "myphuc",
+  "luyen" + "thi",
+  "sgh" + "asia",
+  "jack" + "app",
+  "N" + "AB", // as a word; the internal three-letter grade reference
 ];
-const FORBIDDEN_SUBSTRINGS = ["ivi.asia"]; // contains a dot; word-boundary N/A
+const FORBIDDEN_SUBSTRINGS = ["ivi" + ".asia"]; // contains a dot; word-boundary N/A
 const WORD_RE = (w) => new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
 
 const SKIP_DIRS = new Set(["node_modules", "dist", ".git"]);
-const SKIP_FILES = new Set(["preflight.js"]);
 const BINARY_EXTS = new Set([
   ".gif", ".png", ".jpg", ".jpeg", ".zip", ".ico", ".woff", ".woff2", ".ttf",
 ]);
@@ -53,7 +58,7 @@ function walk(dir) {
     }
     if (st.isSymbolicLink()) continue;
     if (st.isDirectory()) walk(full);
-    else if (st.isFile() && !SKIP_FILES.has(entry)) checkFile(full);
+    else if (st.isFile()) checkFile(full);
   }
 }
 

@@ -1,0 +1,15 @@
+{
+  "provider": "google-ai-studio",
+  "model": "gemini-3.5-flash",
+  "modelVersionsServed": [
+    "gemini-3.6-flash"
+  ],
+  "recordedAt": "2026-11-10T12:24:01Z",
+  "temperature": 0,
+  "seed": 20261110,
+  "thinkingBudget": 0,
+  "maxOutputTokens": 1024,
+  "prompts": 12,
+  "promptTokenCount": 253,
+  "candidateTokenCount": 5403
+}

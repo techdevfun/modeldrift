@@ -11,6 +11,11 @@
  *   4. CHANGED        - normalized output differs.
  *   5. IDENTICAL      - normalized output is equal.
  * Prompts present on one side only: NEW (current only) / REMOVED (baseline only).
+ *
+ * Note on "changed": the summary's `changed` counts every prompt that is
+ * not IDENTICAL (CHANGED, REFUSAL-FLIP, LENGTH-DRIFT, STRUCTURE-FLIP, NEW,
+ * REMOVED). A per-prompt verdict of CHANGED is the narrower case: the
+ * output differs but no flip or drift signal fired.
  */
 import { normalizeOutput, type RunRecord } from "./runfile.js";
 import { isRefusal } from "./refusal.js";
@@ -68,14 +73,11 @@ export function lengthRatio(oldLen: number, newLen: number): number {
   return Math.abs(newLen - oldLen) / Math.max(oldLen, 1);
 }
 
-/** True when the prompt asks for JSON output (or either output looks JSON-shaped). */
-export function wantsJson(prompt: string, baselineOut: string, currentOut: string): boolean {
-  if (/json/i.test(prompt)) return true;
-  const looksJson = (s: string) => {
-    const t = s.trim();
-    return t.startsWith("{") || t.startsWith("[");
-  };
-  return looksJson(baselineOut) || looksJson(currentOut);
+/** True only when the prompt asks for JSON output. An output that merely
+ *  looks JSON-shaped (starts with "{" or "[") does not count: a code
+ *  answer that starts with an object literal is not a JSON-format flip. */
+export function wantsJson(prompt: string): boolean {
+  return /json/i.test(prompt);
 }
 
 export function parsesAsJson(output: string): boolean {
@@ -161,7 +163,7 @@ export function diffRuns(
         : "baseline refuses, current complies";
     } else if (
       baseJson !== curJson &&
-      wantsJson(b!.prompt, baseOut, curOut)
+      wantsJson(b!.prompt)
     ) {
       verdict = "STRUCTURE-FLIP";
       detail = curJson

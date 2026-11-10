@@ -1,0 +1,14 @@
+{
+  "provider": "stali",
+  "model": "gemini-3.5-flash",
+  "modelVersionsServed": [
+    "gemini-3.5-flash"
+  ],
+  "recordedAt": "2026-11-10T12:43:22Z",
+  "temperature": 0,
+  "seed": 20261110,
+  "maxOutputTokens": 1024,
+  "prompts": 12,
+  "promptTokenCount": 24265,
+  "candidateTokenCount": 4822
+}

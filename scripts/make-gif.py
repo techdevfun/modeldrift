@@ -52,11 +52,11 @@ canvas: list[tuple[str, tuple]] = []
 title = Image.new("RGB", (W, H), BG)
 d = ImageDraw.Draw(title)
 d.text((14, 200), "modeldrift - did the model change its behavior?", font=bold, fill=GREEN)
-d.text((14, 250), "1. init a 12-prompt suite, pin model claude-fable-5.1", font=font, fill=FG)
-d.text((14, 280), "2. diff baseline vs current: 2 refusal flips, 1 length drift", font=font, fill=FG)
-d.text((14, 310), "3. check fails fast: the run is fable-5.2, the pin says 5.1", font=font, fill=FG)
+d.text((14, 250), "1. init a 12-prompt suite, pin model gemini-3.5-flash", font=font, fill=FG)
+d.text((14, 280), "2. diff baseline vs current: 11 of 12 changed, 1 refusal flip, 1 length drift", font=font, fill=FG)
+d.text((14, 310), "3. check fails fast: the run is gemini-3.5-flash-lite, the pin says 3.5-flash", font=font, fill=FG)
 d.text((14, 380), "zero-dep CLI - no provider calls, no API key", font=font, fill=DIM)
-d.text((14, 410), "demo fixtures are synthetic seeded runs, not real vendor runs", font=font, fill=DIM)
+d.text((14, 410), "real recorded runs: Gemini API, temperature 0, seed 20261110", font=font, fill=DIM)
 for _ in range(50):
     frames.append(title.copy())
 
